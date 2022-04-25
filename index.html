@@ -64,22 +64,17 @@
       // name = "crypto";
       // user = "truzact";
       try {
-        const rawRequest = await fetch('http://localhost:9000/spaces', {
-          method: 'POST',
+        const rawRequest = await fetch(`https://thawing-stream-67767.herokuapp.com/spaces?name=${name}&user=${user}`, {
+          method: 'GET',
           timeout: timeoutInMilliseconds,
           signal: controller.signal,
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            name, 
-            user,
-          })
         });
         clearTimeout(id);
         const spaces = await rawRequest.json();    
-        console.log(spaces)
         if (spaces.data && spaces.data.length > 0) {
           createCards(spaces.data, user, name);
           loader.classList.remove('show');
