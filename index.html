@@ -19,10 +19,10 @@
         </fieldset>
         <div class="inner-form">
           <div class="input-field first-wrap">
-            <input id="name" type="text" placeholder="crypto" required/>
+            <input id="name" type="text" placeholder="topic"/>
           </div>
           <div class="input-field second-wrap">
-            <input id="user" type="text" placeholder="VitalikButerin" required/>
+            <input id="user" type="text" placeholder="twitter username"/>
           </div>
           <div class="input-field third-wrap">
             <button id="search" class="btn-search" type="button" onclick="executeSearch()">Search</button>
@@ -31,21 +31,53 @@
         <div class="d-flex justify-content-center">                      
           <div id="loader" class="spinner-border text-warning collapse"></div>
         </div>
-        <div id="searchResponse" class="collapse">
-        </div>
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <svg class="bd-placeholder-img rounded mr-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" role="img"><rect fill="#007aff" width="100%" height="100%"></rect></svg>
+              <strong class="mr-auto">No Spaces Found</strong>
+              <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="toast-body">
+              Please try another search query
+            </div>
+          </div>
+        <div id="searchResponse" class="collapse"></div>
       </form>
     </div>
   </body><!-- This templates was made by Colorlib (https://colorlib.com) -->
 </html>
 
 <script>
+  function displayToast() {
+    $('.toast').toast({
+      show: true,
+      delay: 3000,  
+    });
+    $('.toast').toast('show');
+  }
   function executeSearch() {
+    const defaultTopics = [
+      'crypto',
+      'blockchain',
+      'web3',
+      'defi',
+      'ethereum',
+      'relationships',
+      'sex',
+      'love',
+      'books',
+      'bitcoin'
+    ]
     const loader = document.getElementById("loader");
     const searchResponse = document.getElementById("searchResponse");
     let name = document.getElementById('name').value;
     let user = document.getElementById('user').value;
-    if (name == "" || user == "") {
-      return;
+    if (name == "" && user == "") {
+      // set default name for random fun
+      name = defaultTopics[Math.floor(Math.random() * defaultTopics.length)];
+      // user = "truzact";
     }
 
     if (loader.classList.contains('show')) {
@@ -59,30 +91,35 @@
       const timeoutInMilliseconds = 3000; 
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeoutInMilliseconds);
-
-      // TODO: replace url and request body
-      // name = "crypto";
-      // user = "truzact";
+    
       try {
-        const rawRequest = await fetch(`https://thawing-stream-67767.herokuapp.com/spaces?name=${name}&user=${user}`, {
-          method: 'GET',
-          timeout: timeoutInMilliseconds,
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-        });
+          let url = `https://thawing-stream-67767.herokuapp.com/spaces?name=${name}`;
+          // let url = `http:localhost:8080/spaces?name=${name}`;
+          if (user != "") {
+            url += `&user=${user}`;
+          }
+          const rawRequest = await fetch(url, {
+            method: 'GET',
+            timeout: timeoutInMilliseconds,
+            signal: controller.signal,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+          });
         clearTimeout(id);
-        const spaces = await rawRequest.json();    
+        loader.classList.remove('show');
+        const spaces = await rawRequest.json();
         if (spaces.data && spaces.data.length > 0) {
           createCards(spaces.data, user, name);
-          loader.classList.remove('show');
           searchResponse.classList.add('show');
+        } else {
+          displayToast();
         }
       } catch (error) {
         console.log('error here', error);
         loader.classList.remove('show');
+        displayToast();
       }
     })();
   }
@@ -138,7 +175,9 @@
       
       // build card body
       divCardBody.appendChild(title);
-      divCardBody.appendChild(paragraph);
+      if (user != "") {
+        divCardBody.appendChild(paragraph);
+      }
       divCardBody.appendChild(link);
 
       // build card
